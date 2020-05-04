@@ -8,18 +8,66 @@ output:
 
 ## Loading and preprocessing the data
 
-
+```{r}
+require(dplyr)
+dat=read.csv("C:/Users/U410DA/Desktop/coursera/RepData/activity/activity.csv")
+data=dat%>%group_by(date)
+by_date=data%>%summarise(steps=sum(steps))
+data2=dat%>%group_by(interval)
+by_interval=data2%>%summarise(steps=mean(steps,na.rm=TRUE))
+```
 
 ## What is mean total number of steps taken per day?
-
+```{r}
+hist(by_date$steps,main ="Total Steps Per Day")
+mean(by_date$steps,na.rm = TRUE)
+median(by_date$steps,na.rm = TRUE)
+```
 
 
 ## What is the average daily activity pattern?
-
-
-
+```{r}
+plot(by_interval,type="l")
+by_interval$interval[which.max(by_interval$steps)]
+```
 ## Imputing missing values
-
+```{r}
+sum(is.na(data$steps))
+n=length(dat$steps)/length(by_interval$steps)
+reps = rep(by_interval$steps,times=n)
+newdata=dat
+for (i in 1:length(dat$steps)){
+  if(is.na(dat$steps)[i]){
+    newdata$steps[i]=reps[i]
+  } else{
+    newdata$steps[i]=dat$steps[i]
+  }
+}
+newdata2=newdata%>%group_by(date)
+newdata_by_date=newdata2%>%summarise(steps=sum(steps))
+hist(newdata_by_date$steps,main ="Total Steps Per Day")
+mean(newdata_by_date$steps)
+median(newdata_by_date$steps)
+```
+THe mean of total steps per day is unchanged but the median is increased to now equal the mean. 
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
+```{r}
+newdata$day_of_week=weekdays(as.Date(  newdata$date))
+for (i in 1:length(newdata$steps)){
+  if(newdata$day_of_week[i]=='Saturday'|newdata$day_of_week[i]=='Sunday'){
+    newdata$weekday_weekend[i]='weekend'
+  } else{
+    newdata$weekday_weekend[i]='weekday'
+  }
+}
+newdata$weekday_weekend=as.factor(newdata$weekday_weekend)
+newdata3=newdata%>%group_by(interval,weekday_weekend)
+newdata_by_interval=newdata3%>%summarise(steps=mean(steps,na.rm=TRUE))
+par(mfrow=c(2,1))
+plot(y=newdata_by_interval$steps[newdata_by_interval$weekday_weekend=='weekday'],x=newdata_by_interval$interval[newdata_by_interval$weekday_weekend=='weekday'], type="l",ylab='Steps',xlab='Interval',main="Weekdays")
+plot(y=newdata_by_interval$steps[newdata_by_interval$weekday_weekend=='weekend'],x=newdata_by_interval$interval[newdata_by_interval$weekday_weekend=='weekend'], type="l",ylab='Steps',xlab='Interval',main="Weekends")
+
+
+```
